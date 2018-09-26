@@ -160,7 +160,7 @@ func (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {
 		return r.regexp.MatchString(path)
 	}
 
-	return r.regexp.MatchString(getHost(req))
+	return r.regexp.MatchString(strings.ToLower(getHost(req)))
 }
 
 // url builds a URL part using the given values.
