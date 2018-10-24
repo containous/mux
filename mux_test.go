@@ -203,6 +203,15 @@ func TestHost(t *testing.T) {
 			hostTemplate: `{v-1:[a-z]{3}}.{v-2:[a-z]{3}}.{v-3:[a-z]{3}}`,
 			shouldMatch:  true,
 		},
+		{
+			title:       "Host matching is case insensitive",
+			route:       new(Route).Host("AAA.bbb.ccc"),
+			request:     newRequest("GET", "http://aaa.BBB.ccc/111/222/333"),
+			vars:        map[string]string{},
+			host:        "AAA.bbb.ccc",
+			path:        "",
+			shouldMatch: true,
+		},
 	}
 	for _, test := range tests {
 		testRoute(t, test)
