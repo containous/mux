@@ -5,6 +5,7 @@
 package mux
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -414,6 +415,11 @@ func setVars(r *http.Request, val interface{}) *http.Request {
 
 func setCurrentRoute(r *http.Request, val interface{}) *http.Request {
 	return contextSet(r, routeKey, val)
+}
+
+func requestWithVars(r *http.Request, vars map[string]string) *http.Request {
+	ctx := context.WithValue(r.Context(), varsKey, vars)
+	return r.WithContext(ctx)
 }
 
 // ----------------------------------------------------------------------------
