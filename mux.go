@@ -117,7 +117,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.Match(req, &match) {
 		handler = match.Handler
 		req = setVars(req, match.Vars)
-		req = setCurrentRoute(req, match.Route)
+
+		// After reproducing https://github.com/traefik/traefik/issues/8044 we noticed that the router Handlers,
+		// built by https://github.com/traefik/traefik/blob/380514941cd3cd8b8cc71f73c35f786acf7ddd65/pkg/server/router/router.go#L114,
+		// added to the Request context through setCurrentRoute are not Garbage Collected properly.
+		// We still think that the leak is not due to gorilla/mux but commenting this line of code mitigates the memory
+		// leak issue for now.
+		//
+		// req = setCurrentRoute(req, match.Route)
 	}
 
 	if handler == nil && match.MatchErr == ErrMethodMismatch {
