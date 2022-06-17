@@ -166,7 +166,7 @@ func (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {
 		return r.regexp.MatchString(path)
 	}
 
-	return r.regexp.MatchString(getHost(req))
+	return r.regexp.MatchString(req.Host)
 }
 
 // url builds a URL part using the given values.
@@ -263,7 +263,7 @@ type routeRegexpGroup struct {
 func (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) {
 	// Store host variables.
 	if v.host != nil {
-		host := getHost(req)
+		host := req.Host
 		matches := v.host.regexp.FindStringSubmatchIndex(host)
 		if len(matches) > 0 {
 			extractVars(host, matches, v.host.varsN, m.Vars)
@@ -302,20 +302,6 @@ func (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) 
 			extractVars(queryURL, matches, q.varsN, m.Vars)
 		}
 	}
-}
-
-// getHost tries its best to return the request host.
-func getHost(r *http.Request) string {
-	if r.URL.IsAbs() {
-		return r.URL.Host
-	}
-	host := r.Host
-	// Slice off any port information.
-	if i := strings.Index(host, ":"); i != -1 {
-		host = host[:i]
-	}
-	return host
-
 }
 
 func extractVars(input string, matches []int, names []string, output map[string]string) {
