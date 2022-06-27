@@ -7,6 +7,7 @@ package mux
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -166,7 +167,7 @@ func (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {
 		return r.regexp.MatchString(path)
 	}
 
-	return r.regexp.MatchString(req.Host)
+	return r.regexp.MatchString(parseHost(req.Host))
 }
 
 // url builds a URL part using the given values.
@@ -263,7 +264,7 @@ type routeRegexpGroup struct {
 func (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) {
 	// Store host variables.
 	if v.host != nil {
-		host := req.Host
+		host := parseHost(req.Host)
 		matches := v.host.regexp.FindStringSubmatchIndex(host)
 		if len(matches) > 0 {
 			extractVars(host, matches, v.host.varsN, m.Vars)
@@ -315,4 +316,16 @@ func extractVars(input string, matches []int, names []string, output map[string]
 			matchesCount++
 		}
 	}
+}
+
+func parseHost(addr string) string {
+	if !strings.Contains(addr, ":") {
+		return addr
+	}
+
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return addr
+	}
+	return host
 }
