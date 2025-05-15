@@ -18,6 +18,11 @@ var (
 	ErrMethodMismatch = errors.New("method is not allowed")
 )
 
+type RoutingPathContextKey int
+
+// RoutingPathKey is the request context key used to inject the routing path into mux.
+const RoutingPathKey RoutingPathContextKey = iota
+
 // NewRouter returns a new router instance.
 func NewRouter() *Router {
 	return &Router{namedRoutes: make(map[string]*Route), KeepContext: false}
@@ -64,6 +69,8 @@ type Router struct {
 	KeepContext bool
 	// see Router.UseEncodedPath(). This defines a flag for all routes.
 	useEncodedPath bool
+	// see Router.UseRoutingPath(). This defines a flag for all routes.
+	useRoutingPath bool
 }
 
 // Match matches registered routes against the request.
@@ -96,6 +103,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		if r.useEncodedPath {
 			path = req.URL.EscapedPath()
+		} else if routingPath := req.Context().Value(RoutingPathKey); r.useRoutingPath && routingPath != nil {
+			path = routingPath.(string)
 		}
 		// Clean path to canonical form and redirect.
 		if p := cleanPath(path); p != path {
@@ -199,6 +208,12 @@ func (r *Router) UseEncodedPath() *Router {
 	return r
 }
 
+// UseRoutingPath tells the router to match using the routing path in the request context.
+func (r *Router) UseRoutingPath() *Router {
+	r.useRoutingPath = true
+	return r
+}
+
 // ----------------------------------------------------------------------------
 // parentRoute
 // ----------------------------------------------------------------------------
@@ -243,7 +258,7 @@ func (r *Router) buildVars(m map[string]string) map[string]string {
 
 // NewRoute registers an empty route.
 func (r *Router) NewRoute() *Route {
-	route := &Route{parent: r, strictSlash: r.strictSlash, skipClean: r.skipClean, useEncodedPath: r.useEncodedPath}
+	route := &Route{parent: r, strictSlash: r.strictSlash, skipClean: r.skipClean, useEncodedPath: r.useEncodedPath, useRoutingPath: r.useRoutingPath}
 	r.routes = append(r.routes, route)
 	return route
 }

@@ -25,7 +25,7 @@ import (
 // Previously we accepted only Python-like identifiers for variable
 // names ([a-zA-Z_][a-zA-Z0-9_]*), but currently the only restriction is that
 // name and pattern can't be empty, and names can't contain a colon.
-func newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash, useEncodedPath bool) (*routeRegexp, error) {
+func newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash, useEncodedPath, useRoutingPath bool) (*routeRegexp, error) {
 	// Check if it is well-formed.
 	idxs, errBraces := braceIndices(tpl)
 	if errBraces != nil {
@@ -123,6 +123,7 @@ func newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash,
 		matchQuery:     matchQuery,
 		strictSlash:    strictSlash,
 		useEncodedPath: useEncodedPath,
+		useRoutingPath: useRoutingPath,
 		regexp:         reg,
 		reverse:        reverse.String(),
 		varsN:          varsN,
@@ -144,6 +145,8 @@ type routeRegexp struct {
 	// Determines whether to use encoded req.URL.EnscapedPath() or unencoded
 	// req.URL.Path for path matching
 	useEncodedPath bool
+	// Determines whether to use the routing path from the request context.
+	useRoutingPath bool
 	// Expanded regexp.
 	regexp *regexp.Regexp
 	// Reverse template.
@@ -163,6 +166,8 @@ func (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {
 		path := req.URL.Path
 		if r.useEncodedPath {
 			path = req.URL.EscapedPath()
+		} else if routingPath := req.Context().Value(RoutingPathKey); r.useRoutingPath && routingPath != nil {
+			path = routingPath.(string)
 		}
 		return r.regexp.MatchString(path)
 	}
@@ -273,6 +278,8 @@ func (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) 
 	path := req.URL.Path
 	if r.useEncodedPath {
 		path = req.URL.EscapedPath()
+	} else if routingPath := req.Context().Value(RoutingPathKey); r.useRoutingPath && routingPath != nil {
+		path = routingPath.(string)
 	}
 	// Store path variables.
 	if v.path != nil {
