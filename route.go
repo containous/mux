@@ -31,6 +31,8 @@ type Route struct {
 	skipClean bool
 	// If true, "/path/foo%2Fbar/to" will match the path "/path/{var}/to"
 	useEncodedPath bool
+	// If true, the routing path from the request context will be used.
+	useRoutingPath bool
 	// The scheme used when building URLs.
 	buildScheme string
 	// If true, this route never matches: it is only used to build URLs.
@@ -193,7 +195,7 @@ func (r *Route) addRegexpMatcher(tpl string, matchHost, matchPrefix, matchQuery 
 			tpl = strings.TrimRight(r.regexp.path.template, "/") + tpl
 		}
 	}
-	rr, err := newRouteRegexp(tpl, matchHost, matchPrefix, matchQuery, r.strictSlash, r.useEncodedPath)
+	rr, err := newRouteRegexp(tpl, matchHost, matchPrefix, matchQuery, r.strictSlash, r.useEncodedPath, r.useRoutingPath)
 	if err != nil {
 		return err
 	}
